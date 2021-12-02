@@ -9,7 +9,7 @@ use std::io::{self, Read};
 mod solution;
 
 fn main() -> Result<(), ()> {
-  let matches = App::new("Advent of Code 2017 Solutions")
+  let matches = App::new("Advent of Code 2021 Solutions")
     .arg(Arg::with_name("PART").short("p").index(1))
     .arg(Arg::with_name("INPUT").index(2))
     .arg(Arg::with_name("v").short("v").multiple(true))
