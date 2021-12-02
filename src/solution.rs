@@ -1,5 +1,18 @@
-pub fn part1(_input: &str) -> String {
-  format!("{}", 0)
+pub fn part1(input: &str) -> String {
+  let mut prev: i64 = i64::MAX;
+  let mut increments = 0;
+  for line in input.trim().lines() {
+    let measurement = match line.parse::<i64>() {
+      Err(e) => panic!("{}", e),
+      Ok(v) => v,
+    };
+    if measurement > prev {
+      increments += 1;
+    }
+    prev = measurement;
+  }
+
+  format!("{}", increments)
 }
 
 pub fn part2(_input: &str) -> String {
