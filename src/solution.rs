@@ -1,4 +1,9 @@
-fn parse_command(line: &str) -> Vec<i64> {
+enum Command {
+  Forward(i64),
+  Depth(i64),
+}
+
+fn parse_command(line: &str) -> Command {
   let mut parts = line.trim().split_ascii_whitespace();
   let cmd = parts.next();
   let value = match parts.next() {
@@ -11,17 +16,28 @@ fn parse_command(line: &str) -> Vec<i64> {
   match cmd {
     None => panic!("invalid cmd, empty string"),
     Some(c) => match c {
-      "forward" => vec![value, 0],
-      "down" => vec![0, value],
-      "up" => vec![0, -value],
+      "forward" => Command::Forward(value),
+      "down" => Command::Depth(value),
+      "up" => Command::Depth(-value),
       _ => panic!("invalid cmd: {}", c),
     },
   }
 }
 
-fn add_command(position: &mut Vec<i64>, cmd: &[i64]) {
-  for i in 0..position.len() {
-    position[i] += cmd[i]
+fn run_command_v1(position: &mut Vec<i64>, cmd: &Command) {
+  match cmd {
+    Command::Forward(value) => position[0] += value,
+    Command::Depth(value) => position[1] += value,
+  }
+}
+
+fn run_command_v2(position: &mut Vec<i64>, cmd: &Command) {
+  match cmd {
+    Command::Depth(value) => position[2] += value,
+    Command::Forward(value) => {
+      position[0] += value;
+      position[1] += position[2] * value;
+    }
   }
 }
 
@@ -29,13 +45,18 @@ pub fn part1(input: &str) -> String {
   let mut position = vec![0, 0];
   for line in input.trim().lines() {
     let cmd = parse_command(line);
-    add_command(&mut position, &cmd);
+    run_command_v1(&mut position, &cmd);
   }
-  format!("{}", position.iter().fold(1, |acc, c| acc * c))
+  format!("{}", position[0] * position[1])
 }
 
-pub fn part2(_input: &str) -> String {
-  format!("{}", 0)
+pub fn part2(input: &str) -> String {
+  let mut position = vec![0, 0, 0];
+  for line in input.trim().lines() {
+    let cmd = parse_command(line);
+    run_command_v2(&mut position, &cmd);
+  }
+  format!("{}", position[0] * position[1])
 }
 
 #[cfg(test)]
@@ -54,5 +75,14 @@ mod test {
   }
 
   #[test]
-  fn test_p2() {}
+  fn test_p2() {
+    let input = "\
+      forward 5\n\
+      down 5\n\
+      forward 8\n\
+      up 3\n\
+      down 8\n\
+      forward 2";
+    assert_eq!(&part2(input), "900");
+  }
 }
