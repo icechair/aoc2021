@@ -1,4 +1,6 @@
+use std::collections::HashSet;
 use std::fmt;
+use std::hash::{Hash, Hasher};
 use std::str::Lines;
 const BOARD_SIZE: usize = 5;
 fn index(row: usize, col: usize) -> usize {
@@ -88,9 +90,9 @@ impl Bingo {
   }
 }
 
-pub fn part1(input: &str) -> String {
+fn parse_bingo(input: &str) -> (Vec<i64>, Vec<Bingo>) {
   let mut lines = input.trim().lines();
-  let raffle: Vec<i64> = lines
+  let raffle = lines
     .next()
     .expect("raffle shoud not be empty")
     .split(",")
@@ -100,7 +102,11 @@ pub fn part1(input: &str) -> String {
   while let Some(_) = lines.next() {
     boards.push(Bingo::from(&mut lines));
   }
+  return (raffle, boards);
+}
 
+pub fn part1(input: &str) -> String {
+  let (raffle, mut boards) = parse_bingo(input);
   for (rid, &value) in raffle.iter().enumerate() {
     println!("raffle-{}: {}", rid, value);
     for (bid, board) in boards.iter_mut().enumerate() {
@@ -113,8 +119,26 @@ pub fn part1(input: &str) -> String {
   return format!("{}", 0);
 }
 
-pub fn part2(_input: &str) -> String {
-  format!("{}", 0)
+//Hash + Eq
+struct Winner {
+  bid: usize,
+  score: i64,
+}
+
+pub fn part2(input: &str) -> String {
+  let (raffle, mut boards) = parse_bingo(input);
+  let mut winners: Vec<Winner> = vec![];
+  for (rid, &value) in raffle.iter().enumerate() {
+    for (bid, board) in boards.iter_mut().enumerate() {
+      if winners.iter().any(|x| x.bid == bid) == false {
+        if board.mark(value) {
+          let score = board.score() * value;
+          winners.push(Winner { bid, score });
+        }
+      }
+    }
+  }
+  format!("{}", winners.last().unwrap().score)
 }
 
 #[cfg(test)]
@@ -149,5 +173,7 @@ mod test {
   }
 
   #[test]
-  fn test_p2() {}
+  fn test_p2() {
+    assert_eq!(&part2(input), "1924");
+  }
 }
