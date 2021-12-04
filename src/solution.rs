@@ -1,6 +1,4 @@
-use std::collections::HashSet;
 use std::fmt;
-use std::hash::{Hash, Hasher};
 use std::str::Lines;
 const BOARD_SIZE: usize = 5;
 fn index(row: usize, col: usize) -> usize {
@@ -128,7 +126,7 @@ struct Winner {
 pub fn part2(input: &str) -> String {
   let (raffle, mut boards) = parse_bingo(input);
   let mut winners: Vec<Winner> = vec![];
-  for (rid, &value) in raffle.iter().enumerate() {
+  for (_, &value) in raffle.iter().enumerate() {
     for (bid, board) in boards.iter_mut().enumerate() {
       if winners.iter().any(|x| x.bid == bid) == false {
         if board.mark(value) {
@@ -145,7 +143,7 @@ pub fn part2(input: &str) -> String {
 mod test {
   use super::*;
 
-  const input: &str = "\
+  const INPUT: &str = "\
 7,4,9,5,11,17,23,2,0,14,21,24,10,16,13,6,15,25,12,22,18,20,8,19,3,26,1
 
 22 13 17 11  0
@@ -169,11 +167,11 @@ mod test {
 
   #[test]
   fn test_p1() {
-    assert_eq!(&part1(input), "4512");
+    assert_eq!(&part1(INPUT), "4512");
   }
 
   #[test]
   fn test_p2() {
-    assert_eq!(&part2(input), "1924");
+    assert_eq!(&part2(INPUT), "1924");
   }
 }
