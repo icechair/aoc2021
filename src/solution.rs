@@ -8,10 +8,7 @@ fn naive_fuel_cost(crabs: &[i64], pos: i64) -> i64 {
 
 fn crab_fuel_cost(from: i64, to: i64) -> i64 {
   let delta = i64::abs(to - from);
-  let mut cost = 0;
-  for i in 0..delta + 1 {
-    cost += i;
-  }
+  let cost = delta * (delta + 1) / 2;
   return cost;
 }
 
