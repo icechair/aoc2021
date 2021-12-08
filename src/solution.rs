@@ -1,4 +1,6 @@
 use std::iter::FromIterator;
+mod list;
+use list::drain_filter;
 /**
  *  aaaa
  * b    c
@@ -32,23 +34,6 @@ fn sort_chars(line: &str) -> String {
   let mut chars: Vec<char> = line.chars().collect();
   chars.sort();
   return String::from_iter(chars);
-}
-
-fn drain_filter<T, F>(list: &mut Vec<T>, f: F) -> Vec<T>
-where
-  F: Fn(&T) -> bool,
-{
-  let mut out = Vec::with_capacity(list.capacity());
-  let mut i = 0;
-  while i < list.len() {
-    if f(&list[i]) {
-      let val = list.remove(i);
-      out.push(val);
-    } else {
-      i += 1;
-    }
-  }
-  return out;
 }
 
 fn difference(a: &str, b: &str) -> String {
