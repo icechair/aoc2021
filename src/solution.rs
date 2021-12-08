@@ -28,31 +28,22 @@ fn parse_line(line: &str) -> (Vec<String>, Vec<String>) {
   return (input_values, output_values);
 }
 
-fn contains_all(line: &str, search: &str) -> bool {
-  for ch in search.chars() {
-    if line.contains(ch) == false {
-      return false;
-    }
-  }
-  return true;
-}
-
 fn sort_chars(line: &str) -> String {
   let mut chars: Vec<char> = line.chars().collect();
   chars.sort();
   return String::from_iter(chars);
 }
 
-fn drain_filter<F>(list: &mut Vec<String>, f: F) -> Vec<String>
+fn drain_filter<T, F>(list: &mut Vec<T>, f: F) -> Vec<T>
 where
-  F: Fn(&str) -> bool,
+  F: Fn(&T) -> bool,
 {
   let mut out = Vec::with_capacity(list.capacity());
   let mut i = 0;
   while i < list.len() {
     if f(&list[i]) {
       let val = list.remove(i);
-      out.push(val.to_string());
+      out.push(val);
     } else {
       i += 1;
     }
@@ -84,7 +75,7 @@ fn parse_segments(cypher: &mut Vec<String>) -> Vec<String> {
   cypher.sort_by(|a, b| b.len().cmp(&a.len()));
   digits[1] = cypher.pop().unwrap();
   segments[2] = digits[1].clone();
-  segments[5] = digits[1].clone();
+  segments[5] = segments[2].clone();
   digits[7] = cypher.pop().unwrap();
   segments[0] = difference(&digits[7], &digits[1]);
   segments[3] = difference(&digits[7], &digits[1]);
@@ -93,21 +84,10 @@ fn parse_segments(cypher: &mut Vec<String>) -> Vec<String> {
   segments[3] = segments[1].clone();
   cypher.reverse();
   digits[8] = cypher.pop().unwrap();
-  let combined = &segments[0..4].concat();
   segments[4] = difference(&digits[8], &segments[0..4].concat());
   segments[6] = segments[4].clone();
   let mut fives: Vec<String> = cypher.drain(0..3).collect();
-  let mut sixes: Vec<String> = cypher.drain(0..).collect();
 
-  /**
-   *  0000
-   * 1    2
-   * 1    2
-   *  3333
-   * 4    5
-   * 4    5
-   *  6666
-   */
   for digit in &fives {
     let diff3 = difference(&segments[3], digit);
     let diff6 = difference(&segments[6], digit);
@@ -134,7 +114,7 @@ fn parse_segments(cypher: &mut Vec<String>) -> Vec<String> {
   digits[0] = format!("{}{}", &segments[0..3].concat(), &segments[4..].concat());
   digits[6] = format!("{}{}", &segments[0..2].concat(), &segments[3..].concat());
   digits[9] = format!("{}{}", &segments[0..4].concat(), &segments[5..].concat());
-  println!("{:?}\n{:?}\n{:?}\n{:?}", fives, sixes, digits, segments);
+  println!("{:?}\n{:?}\n{:?}", fives, digits, segments);
   return digits.into_iter().map(|x| sort_chars(&x)).collect();
 }
 
