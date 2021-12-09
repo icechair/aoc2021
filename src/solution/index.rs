@@ -20,24 +20,22 @@ where
 {
   let (row, col) = row_col(id, width);
 
-  let mut nexts: Vec<usize> = Vec::new();
+  let mut nexts: Vec<(usize, &T)> = Vec::new();
   if row > 0 {
-    //up
-    nexts.push(index(row - 1, col, width));
+    let up = index(row - 1, col, width);
+    nexts.push((up, &list[up]));
   }
   if col > 0 {
-    //left
-    nexts.push(index(row, col - 1, width));
+    let left = index(row, col - 1, width);
+    nexts.push((left, &list[left]));
   }
-  let right = index(row, col + 1, width);
-  if right < list.len() {
-    nexts.push(right);
+  if col + 1 < width {
+    let right = index(row, col + 1, width);
+    nexts.push((right, &list[right]));
   }
-  let down = index(row + 1, col, width);
-  if down < list.len() {
-    nexts.push(down);
+  if row + 1 < height {
+    let down = index(row + 1, col, width);
+    nexts.push((down, &list[down]));
   }
-  return list.iter().enumerate().filter(move |(i, _)| {
-    return *i != id && nexts.contains(i);
-  });
+  return nexts.into_iter();
 }
