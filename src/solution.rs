@@ -1,8 +1,3 @@
-use std::collections::VecDeque;
-
-const DELIM_END: [char; 4] = [')', ']', '}', '>'];
-const DELIM_SCORE: [i64; 4] = [3, 57, 1197, 25137];
-
 fn parse_line(line: &str) -> Result<Vec<char>, i64> {
   let mut stack: Vec<char> = vec![];
   for ch in line.trim().chars() {
