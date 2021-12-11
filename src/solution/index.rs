@@ -14,28 +14,68 @@ pub fn neighbours<T>(
   id: usize,
   width: usize,
   height: usize,
-) -> impl Iterator<Item = (usize, &T)> + '_
+  with_diagonals: bool,
+) -> impl Iterator<Item = usize> + '_
 where
   T: Debug,
 {
   let (row, col) = row_col(id, width);
 
-  let mut nexts: Vec<(usize, &T)> = Vec::new();
+  let mut nexts: Vec<usize> = Vec::new();
   if row > 0 {
     let up = index(row - 1, col, width);
-    nexts.push((up, &list[up]));
+    nexts.push(up);
   }
   if col > 0 {
     let left = index(row, col - 1, width);
-    nexts.push((left, &list[left]));
+    nexts.push(left);
   }
   if col + 1 < width {
     let right = index(row, col + 1, width);
-    nexts.push((right, &list[right]));
+    nexts.push(right);
   }
   if row + 1 < height {
     let down = index(row + 1, col, width);
-    nexts.push((down, &list[down]));
+    nexts.push(down);
   }
+
+  if with_diagonals {
+    if row > 0 {
+      if col > 0 {
+        let up_left = index(row - 1, col - 1, width);
+        nexts.push(up_left);
+      }
+      if col + 1 < width {
+        let up_right = index(row - 1, col + 1, width);
+        nexts.push(up_right);
+      }
+    }
+    if row + 1 < height {
+      if col > 0 {
+        let down_left = index(row + 1, col - 1, width);
+        nexts.push(down_left);
+      }
+      if col + 1 < width {
+        let down_right = index(row + 1, col + 1, width);
+        nexts.push(down_right);
+      }
+    }
+  }
+
   return nexts.into_iter();
+}
+
+pub fn print_map<T>(map: &[T], width: usize, height: usize)
+where
+  T: Debug,
+{
+  let mut out = String::new();
+  for row in 0..height {
+    for col in 0..width {
+      let index = index(row, col, width);
+      out.push_str(&format!("{:?}", map[index]))
+    }
+    out.push('\n');
+  }
+  println!("{}", out.trim_end())
 }
