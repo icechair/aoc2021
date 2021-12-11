@@ -64,8 +64,13 @@ pub fn part1(input: &str) -> String {
   return format!("{}", flashes);
 }
 
-pub fn part2(_input: &str) -> String {
-  return format!("0");
+pub fn part2(input: &str) -> String {
+  let mut light_map = LightMap::from(input);
+  let mut turn = 0;
+  while light_map.step() != light_map.list.len() {
+    turn += 1;
+  }
+  return format!("{}", turn + 1);
 }
 
 #[cfg(test)]
@@ -92,6 +97,6 @@ mod test {
 
   #[test]
   fn test_p2() {
-    assert_eq!(&part2(INPUT), "0");
+    assert_eq!(&part2(INPUT), "195");
   }
 }
