@@ -1,5 +1,4 @@
 mod index;
-use index::*;
 use std::collections::VecDeque;
 use std::iter::FromIterator;
 struct LightMap {
