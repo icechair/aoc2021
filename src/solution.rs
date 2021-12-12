@@ -55,14 +55,44 @@ fn walk_graph<'a>(graph: &'a Graph, node: &'a str, seen: &mut HashSet<&'a str>) 
     .sum();
 }
 
+fn walk_graph2<'a>(
+  graph: &'a Graph,
+  node: &'a str,
+  seen: &mut HashSet<&'a str>,
+  double: &mut bool,
+) -> usize {
+  if seen.contains(&node) {
+    if *double {
+      return 0;
+    } else {
+      *double = true;
+    }
+  }
+  if node == "end" {
+    return 1;
+  }
+
+  if node.chars().all(char::is_lowercase) {
+    seen.insert(node);
+  }
+
+  return graph
+    .neighbours(node)
+    .filter(|&node| node != "start")
+    .map(|node| walk_graph2(graph, node, &mut seen.clone(), &mut double.clone()))
+    .sum();
+}
+
 pub fn part1(input: &str) -> String {
   let graph = Graph::from(input);
   let result = walk_graph(&graph, "start", &mut HashSet::new());
   return format!("{}", result);
 }
 
-pub fn part2(_input: &str) -> String {
-  return format!("0");
+pub fn part2(input: &str) -> String {
+  let graph = Graph::from(input);
+  let result = walk_graph2(&graph, "start", &mut HashSet::new(), &mut false);
+  return format!("{}", result);
 }
 
 #[cfg(test)]
@@ -122,6 +152,8 @@ start-RW
 
   #[test]
   fn test_p2() {
-    assert_eq!(&part2(INPUT), "0");
+    assert_eq!(&part2(INPUT), "36");
+    assert_eq!(&part2(INPUT_B), "103");
+    assert_eq!(&part2(INPUT_C), "3509");
   }
 }
