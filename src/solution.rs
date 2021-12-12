@@ -35,7 +35,7 @@ impl LightMap {
 
       if self.list[id] > 9 && flashes.contains(&id) == false {
         flashes.push(id);
-        for next in index::neighbours(&self.list, id, self.width, self.height, true) {
+        for next in index::neighbours(id, self.width, self.height, true) {
           queue.push_back(next);
         }
       }

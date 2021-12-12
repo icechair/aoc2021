@@ -9,16 +9,12 @@ pub fn row_col(index: usize, width: usize) -> (usize, usize) {
   return (row, col);
 }
 
-pub fn neighbours<T>(
-  list: &[T],
+pub fn neighbours(
   id: usize,
   width: usize,
   height: usize,
   with_diagonals: bool,
-) -> impl Iterator<Item = usize> + '_
-where
-  T: Debug,
-{
+) -> impl Iterator<Item = usize> {
   let (row, col) = row_col(id, width);
 
   let mut nexts: Vec<usize> = Vec::new();
