@@ -69,7 +69,7 @@ fn fold_paper(dots: &mut Vec<Point>, fold: &Fold) {
   }
 }
 
-fn print_paper(dots: &[Point]) {
+fn print_paper(dots: &HashSet<&Point>) {
   let min_x = dots
     .iter()
     .fold(i64::MAX, |acc, c| if c.x < acc { c.x } else { acc });
@@ -89,7 +89,7 @@ fn print_paper(dots: &[Point]) {
       if dots.contains(&Point { x, y }) {
         out.push_str("#");
       } else {
-        out.push_str(".");
+        out.push_str(" ");
       }
     }
     out.push_str("\n");
@@ -108,7 +108,16 @@ pub fn part1(input: &str) -> String {
   return format!("{}", visible_dots.len());
 }
 
-pub fn part2(_input: &str) -> String {
+pub fn part2(input: &str) -> String {
+  let (mut dots, folds) = parse_paper(input);
+
+  println!("fold:{:?}", &folds[0]);
+  //  print_paper(&dots);
+  for fold in folds {
+    fold_paper(&mut dots, &fold);
+  }
+  let visible_dots: HashSet<&Point> = HashSet::from_iter(dots.iter());
+  print_paper(&visible_dots);
   return format!("0");
 }
 
