@@ -1,26 +1,22 @@
 use std::collections::HashMap;
 
 type Polymer = Vec<u8>;
-type Rule = (u16, u8);
-type Rules = HashMap<u16, u8>;
-
-fn u88_16(hi: u8, lo: u8) -> u16 {
-  ((hi as u16) << 8) | lo as u16
-}
+type Pair = (u8, u8);
+type Rule = (Pair, u8);
 
 fn parse_rule(line: &str) -> Rule {
   let (from, to) = line.trim().split_once(" -> ").unwrap();
   let from = from.as_bytes();
-  let from = u88_16(from[0], from[1]);
+  let from = (from[0], from[1]);
   let to = to.as_bytes();
   let to = to[0];
   return (from, to);
 }
 
-fn parse_template(input: &str) -> (Polymer, Rules) {
+fn parse_template(input: &str) -> (Polymer, HashMap<Pair, u8>) {
   let mut lines = input.trim().lines();
   let template = lines.next().unwrap().as_bytes();
-  let mut rules = Rules::new();
+  let mut rules = HashMap::new();
 
   while let Some(line) = lines.next() {
     if line.len() > 0 {
@@ -28,48 +24,81 @@ fn parse_template(input: &str) -> (Polymer, Rules) {
       rules.insert(key, val);
     }
   }
+
+  for win in template.windows(2) {}
+
   return (template.to_vec(), rules);
 }
 
-fn find_middle(pair: [u8; 2], rules: &Rules) -> u8 {
-  let key = u88_16(pair[0], pair[1]);
-  let middle = rules.get(&key).unwrap();
-  return *middle;
+fn create_counts(template: &Polymer) -> (HashMap<Pair, usize>, HashMap<u8, usize>) {
+  let mut pair_counts = HashMap::new();
+  let mut elem_counts = HashMap::new();
+  for win in template.windows(2) {
+    pair_counts
+      .entry((win[0], win[1]))
+      .and_modify(|c| *c += 1)
+      .or_insert(1);
+    elem_counts
+      .entry(win[0])
+      .and_modify(|c| *c += 1)
+      .or_insert(0);
+  }
+  elem_counts
+    .entry(*template.last().unwrap())
+    .and_modify(|c| *c += 1)
+    .or_insert(1);
+
+  return (pair_counts, elem_counts);
 }
 
-fn expand(list: &mut Polymer, rules: &Rules) {
-  let mut i = 1;
-  while i < list.len() {
-    let middle = find_middle([list[i - 1], list[i]], rules);
-    list.insert(i, middle);
-    i += 2;
+fn expand(
+  pair_counts: &mut HashMap<Pair, usize>,
+  elem_counts: &mut HashMap<u8, usize>,
+  rules: &HashMap<Pair, u8>,
+) {
+  let mut next_pair_counts = pair_counts.clone();
+  for (pair, elem) in rules {
+    if let Some(pc) = pair_counts.get(pair) {
+      next_pair_counts.entry(*pair).and_modify(|c| *c -= *pc);
+      elem_counts
+        .entry(*elem)
+        .and_modify(|c| *c += *pc)
+        .or_insert(*pc);
+      next_pair_counts
+        .entry((pair.0, *elem))
+        .and_modify(|c| *c += *pc)
+        .or_insert(*pc);
+      next_pair_counts
+        .entry((*elem, pair.1))
+        .and_modify(|c| *c += *pc)
+        .or_insert(*pc);
+    };
   }
-}
-
-fn occurences(list: Polymer) -> HashMap<u8, usize> {
-  let mut counts = HashMap::new();
-  for b in list {
-    let c = counts.entry(b).or_insert(0);
-    *c += 1;
-  }
-  return counts;
+  *pair_counts = next_pair_counts;
 }
 
 pub fn part1(input: &str) -> String {
-  let (mut template, rules) = parse_template(input);
-  println!("{:?}", String::from_utf8(template.clone()));
-  for _ in 0..10 {
-    expand(&mut template, &rules);
+  let (template, rules) = parse_template(input);
+  let (mut pair_counts, mut elem_counts) = create_counts(&template);
+  for turn in 0..10 {
+    expand(&mut pair_counts, &mut elem_counts, &rules);
+    println!("turn {} -> len: {}", turn, template.len());
   }
-  println!("{:?}", String::from_utf8(template.clone()));
-  let counts = occurences(template);
-  let max = counts.values().max().unwrap();
-  let min = counts.values().min().unwrap();
+  let max = elem_counts.values().max().unwrap();
+  let min = elem_counts.values().min().unwrap();
   return format!("{}", max - min);
 }
 
-pub fn part2(_input: &str) -> String {
-  return format!("0");
+pub fn part2(input: &str) -> String {
+  let (template, rules) = parse_template(input);
+  let (mut pair_counts, mut elem_counts) = create_counts(&template);
+  for turn in 0..40 {
+    expand(&mut pair_counts, &mut elem_counts, &rules);
+    println!("turn {} -> len: {}", turn, template.len());
+  }
+  let max = elem_counts.values().max().unwrap();
+  let min = elem_counts.values().min().unwrap();
+  return format!("{}", max - min);
 }
 
 #[cfg(test)]
@@ -104,6 +133,6 @@ CN -> C
 
   #[test]
   fn test_p2() {
-    assert_eq!(&part2(INPUT), "0");
+    assert_eq!(&part2(INPUT), "2188189693529");
   }
 }
