@@ -1,11 +1,20 @@
 use std::cmp;
-use std::collections::BinaryHeap;
-mod index;
+use std::collections::{BinaryHeap, HashMap};
+use std::fmt;
+type RowCol = (usize, usize);
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 struct Priority {
-  index: usize,
+  index: RowCol,
   cost: usize,
+}
+
+fn wrap_add(a: u8, b: u8) -> u8 {
+  let sum = a + b;
+  if sum > 9 {
+    return sum - 9;
+  }
+  return sum;
 }
 
 impl cmp::Ord for Priority {
@@ -24,21 +33,19 @@ impl cmp::PartialOrd for Priority {
 }
 
 struct Grid {
-  list: Vec<u8>,
+  list: Vec<Vec<u8>>,
   width: usize,
   height: usize,
 }
 
 fn parse_grid(input: &str) -> Grid {
-  let mut list = Vec::with_capacity(input.trim().len());
+  let mut list = Vec::new();
   let mut width = 0;
   let mut height = 0;
   for line in input.trim().lines() {
     height += 1;
     width = line.trim().len();
-    for b in line.trim().bytes() {
-      list.push(b - b'0');
-    }
+    list.push(line.trim().bytes().map(|b| b - b'0').collect());
   }
   return Grid {
     list,
@@ -48,11 +55,33 @@ fn parse_grid(input: &str) -> Grid {
 }
 
 impl Grid {
-  pub fn shortest_path(&self, start: usize, target: usize) -> Option<usize> {
-    let mut dist: Vec<_> = (0..self.list.len()).map(|_| usize::MAX).collect();
+  fn neighbours(&self, id: RowCol) -> impl Iterator<Item = RowCol> {
+    let mut nexts = Vec::new();
+    let (row, col) = id;
+    if row > 0 {
+      let up = (row - 1, col);
+      nexts.push(up);
+    }
+    if col > 0 {
+      let left = (row, col - 1);
+      nexts.push(left);
+    }
+    if col + 1 < self.width {
+      let right = (row, col + 1);
+      nexts.push(right);
+    }
+    if row + 1 < self.height {
+      let down = (row + 1, col);
+      nexts.push(down);
+    }
+    return nexts.into_iter();
+  }
+
+  pub fn shortest_path(&self, start: RowCol, target: RowCol) -> Option<usize> {
+    let mut dist: HashMap<RowCol, usize> = HashMap::new();
     let mut heap = BinaryHeap::new();
 
-    dist[start] = 0;
+    dist.insert(start, 0);
     heap.push(Priority {
       index: start,
       cost: 0,
@@ -61,33 +90,79 @@ impl Grid {
       if index == target {
         return Some(cost);
       }
-      if cost > dist[index] {
+      if cost > *dist.entry(index).or_insert(usize::MAX) {
         continue;
       }
-      for idn in index::neighbours(index, self.width, self.height, false) {
+      for (row, col) in self.neighbours(index) {
         let next = Priority {
-          index: idn,
-          cost: cost + usize::from(self.list[idn]),
+          index: (row, col),
+          cost: cost + usize::from(self.list[row][col]),
         };
-        if next.cost < dist[next.index] {
+        if next.cost < *dist.entry(next.index).or_insert(usize::MAX) {
           heap.push(next);
-          dist[next.index] = next.cost;
+          dist.entry(next.index).and_modify(|x| *x = next.cost);
         }
       }
     }
     return None;
   }
+
+  pub fn expand(&mut self, by: usize) {
+    let mut tiles: Vec<Vec<Vec<u8>>> = Vec::new();
+    for i in 0..by * by {
+      tiles.push(
+        self
+          .list
+          .clone()
+          .into_iter()
+          .map(|row| row.into_iter().map(|col| wrap_add(col, i as u8)).collect())
+          .collect(),
+      )
+    }
+    self.list.clear();
+    for row_tile in 0..by {
+      for row in 0..self.width {
+        let mut new_row = Vec::new();
+        for col in 0..by {
+          new_row.extend(tiles[row_tile + col][row].clone());
+        }
+        self.list.push(new_row);
+      }
+    }
+    self.width *= by;
+    self.height *= by;
+  }
+}
+
+impl fmt::Debug for Grid {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    let mut out = format!("grid:\n");
+    for row in &self.list {
+      for v in row {
+        out.push_str(&format!("{}", v));
+      }
+      out.push_str("\n");
+    }
+    return write!(f, "{}", out.trim_end());
+  }
 }
 
 pub fn part1(input: &str) -> String {
   let grid = parse_grid(input);
-  if let Some(cost) = grid.shortest_path(0, grid.list.len() - 1) {
+  if let Some(cost) = grid.shortest_path((0, 0), (grid.width - 1, grid.height - 1)) {
     return format!("{}", cost);
   }
   return format!("0");
 }
 
-pub fn part2(_input: &str) -> String {
+pub fn part2(input: &str) -> String {
+  let mut grid = parse_grid(input);
+  println!("before:\n{:?}", grid);
+  grid.expand(5);
+  println!("after:\n{:?}", grid);
+  if let Some(cost) = grid.shortest_path((0, 0), (grid.width - 1, grid.height - 1)) {
+    return format!("{}", cost);
+  }
   return format!("0");
 }
 
@@ -109,12 +184,18 @@ mod test {
 ";
 
   #[test]
+  fn test_wrap_add() {
+    assert_eq!(wrap_add(9, 1), 1);
+    assert_eq!(wrap_add(9, 5), 5);
+    assert_eq!(wrap_add(8, 5), 4);
+  }
+  #[test]
   fn test_p1() {
     assert_eq!(&part1(INPUT), "40");
   }
 
   #[test]
   fn test_p2() {
-    assert_eq!(&part2(INPUT), "0");
+    assert_eq!(&part2(INPUT), "315");
   }
 }
