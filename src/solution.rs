@@ -46,8 +46,7 @@ enum PacketLength {
 enum Packet {
   Literal {
     version: u8,
-    id: u8,
-    value: i64,
+    data: i64,
   },
   Operator {
     version: u8,
@@ -55,6 +54,46 @@ enum Packet {
     len: PacketLength,
     children: Vec<Packet>,
   },
+}
+
+impl Packet {
+  fn value(&self) -> i64 {
+    match self {
+      Packet::Literal { data, .. } => *data,
+      Packet::Operator { id, children, .. } => match id {
+        0 => children.iter().fold(0, |acc, c| acc + c.value()),
+        1 => children.iter().fold(1, |acc, c| acc * c.value()),
+        2 => children
+          .iter()
+          .fold(i64::MAX, |acc, c| i64::min(acc, c.value())),
+        3 => children
+          .iter()
+          .fold(i64::MIN, |acc, c| i64::max(acc, c.value())),
+        5 => {
+          if children[0].value() > children[1].value() {
+            1
+          } else {
+            0
+          }
+        }
+        6 => {
+          if children[0].value() < children[1].value() {
+            1
+          } else {
+            0
+          }
+        }
+        7 => {
+          if children[0].value() == children[1].value() {
+            1
+          } else {
+            0
+          }
+        }
+        _ => panic!("packet::value: invalid id {}", id),
+      },
+    }
+  }
 }
 
 fn parse_literal_value(reader: &mut dyn Iterator<Item = u8>) -> Result<(i64, usize), String> {
@@ -142,7 +181,7 @@ fn parse_packet(reader: &mut dyn Iterator<Item = u8>) -> Result<(Packet, usize),
   match id {
     4 => match parse_literal_value(reader) {
       Err(e) => return Err(e),
-      Ok((value, len)) => return Ok((Packet::Literal { version, id, value }, 6 + len)),
+      Ok((data, len)) => return Ok((Packet::Literal { version, data }, 6 + len)),
     },
     _ => match parse_packet_length(reader) {
       Err(e) => {
@@ -228,7 +267,7 @@ pub fn part1(input: &str) -> String {
     print!("{:04b} ", d);
   }
   println!("");
-  let mut reader = bit_reader(&data).peekable();
+  let mut reader = bit_reader(&data);
   let mut version = 0;
   match parse_packet(&mut reader) {
     Err(e) => eprintln!("part1 err: {}", e),
@@ -237,8 +276,14 @@ pub fn part1(input: &str) -> String {
   return format!("{}", version);
 }
 
-pub fn part2(_input: &str) -> String {
-  return format!("0");
+pub fn part2(input: &str) -> String {
+  let data = parse_bits(input);
+  let mut reader = bit_reader(&data);
+  match parse_packet(&mut reader) {
+    Err(e) => eprintln!("part2 err: {}", e),
+    Ok((packet, _)) => return format!("{}", packet.value()),
+  }
+  return format!("");
 }
 
 #[cfg(test)]
@@ -250,7 +295,7 @@ mod test {
 
   #[test]
   fn test_bitreader() {
-    let mut reader = bit_reader(&[0x13, 0x40, 0x0F]);
+    let mut reader = bit_reader(&[0x1, 0x3, 0x4, 0x0, 0x0, 0xF]);
     assert_eq!(reader.next(), Some(0));
     assert_eq!(reader.next(), Some(0));
     assert_eq!(reader.next(), Some(0));
@@ -307,14 +352,21 @@ mod test {
 
   #[test]
   fn test_p1() {
-    //assert_eq!(&part1("8A004A801A8002F478"), "16");
-    //assert_eq!(&part1("620080001611562C8802118E34"), "12");
+    assert_eq!(&part1("8A004A801A8002F478"), "16");
+    assert_eq!(&part1("620080001611562C8802118E34"), "12");
     assert_eq!(&part1("C0015000016115A2E0802F182340"), "23");
     assert_eq!(&part1("A0016C880162017C3686B18A3D4780"), "31");
   }
 
   #[test]
   fn test_p2() {
-    assert_eq!(&part2(INPUT), "0");
+    assert_eq!(&part2("C200B40A82"), "3");
+    assert_eq!(&part2("04005AC33890"), "54");
+    assert_eq!(&part2("880086C3E88112"), "7");
+    assert_eq!(&part2("CE00C43D881120"), "9");
+    assert_eq!(&part2("D8005AC2A8F0"), "1");
+    assert_eq!(&part2("F600BC2D8F"), "0");
+    assert_eq!(&part2("9C005AC2F8F0"), "0");
+    assert_eq!(&part2("9C0141080250320F1802104A08"), "1");
   }
 }
