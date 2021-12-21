@@ -148,17 +148,17 @@ fn simulate(target: &Rect, velocity: &Point) -> Result<i64, SimErr> {
       return Ok(height);
     }
     if probe.velocity.x == 0 && target.is_left(&probe.position) {
-      println!("simulate: {:?} undershot_x", velocity);
+      //println!("simulate: {:?} UNDER", velocity);
       //print_simulation(&points, &target);
       return Err(SimErr::Undershot);
     }
     if target.is_right(&probe.position) {
-      println!("simulate: {:?} overshot_x:", velocity);
+      //println!("simulate: {:?} over:", velocity);
       //print_simulation(&points, &target);
       return Err(SimErr::Overshot);
     }
     if target.is_below(&probe.position) {
-      println!("simulate: {:?} drift:", velocity);
+      //println!("simulate: {:?} DRIFTTT", velocity);
       //print_simulation(&points, &target);
       return Err(SimErr::Drift);
     }
@@ -172,9 +172,9 @@ fn simulate(target: &Rect, velocity: &Point) -> Result<i64, SimErr> {
 pub fn part1(input: &str) -> String {
   let target = Rect::from_str(input);
   let mut height = i64::MIN;
-  let max = 10000;
-  for x in 1..target.tl.x {
-    for y in 1..max {
+  let max = 1000;
+  for x in -max..max {
+    for y in -max..max {
       let velocity = Velocity(x, y);
       match simulate(&target, &velocity) {
         Err(e) => match e {
@@ -190,8 +190,25 @@ pub fn part1(input: &str) -> String {
   return format!("{}", height);
 }
 
-pub fn part2(_input: &str) -> String {
-  return format!("0");
+pub fn part2(input: &str) -> String {
+  let target = Rect::from_str(input);
+  let mut hits = 0;
+  let max = 1000;
+  for x in 1..2 * target.tl.x {
+    for y in -max..max {
+      let velocity = Velocity(x, y);
+      match simulate(&target, &velocity) {
+        Err(e) => match e {
+          SimErr::Undershot => break,
+          //SimErr::Overshot => return format!("{}", hits),
+          //SimErr::Drift => break,
+          _ => (),
+        },
+        Ok(_) => hits += 1,
+      }
+    }
+  }
+  return format!("{}", hits);
 }
 
 #[cfg(test)]
